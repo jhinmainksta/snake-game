@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 )
 
-var field [15][15]bool
+var fieldRow = 10
+var fieldCol = 20
 var snakeLen = 6
 
 func comparePoses(snakePoses [][2]int, posVar [2]int) bool {
@@ -17,14 +19,13 @@ func comparePoses(snakePoses [][2]int, posVar [2]int) bool {
 	return true
 }
 
-func main() {
+func initSnake() [][2]int {
 
-	random := rand.Intn(15*15 - 1)
+	randRow := rand.Intn(fieldRow)
+	randCol := rand.Intn(fieldCol)
 
 	snakePoses := make([][2]int, snakeLen)
-	snakePoses[0] = [2]int{random / 15, random % 15}
-
-	field[snakePoses[0][0]][snakePoses[0][1]] = true
+	snakePoses[0] = [2]int{randRow, randCol}
 
 	for i := 1; i < snakeLen; i++ {
 		pos := make([][2]int, 0)
@@ -34,7 +35,7 @@ func main() {
 				pos = append(pos, posVar)
 			}
 		}
-		if snakePoses[i-1][0] != 14 {
+		if snakePoses[i-1][0] != fieldRow {
 			posVar := [2]int{snakePoses[i-1][0] + 1, snakePoses[i-1][1]}
 			if comparePoses(snakePoses, posVar) {
 				pos = append(pos, posVar)
@@ -46,7 +47,7 @@ func main() {
 				pos = append(pos, posVar)
 			}
 		}
-		if snakePoses[i-1][1] != 14 {
+		if snakePoses[i-1][1] != fieldCol {
 			posVar := [2]int{snakePoses[i-1][0], snakePoses[i-1][1] + 1}
 			if comparePoses(snakePoses, posVar) {
 				pos = append(pos, posVar)
@@ -57,9 +58,18 @@ func main() {
 		snakePoses[i] = pos[rngPose]
 	}
 
-	for i := 0; i < len(field); i++ {
-		fmt.Print("_______________________________\n|")
-		for j := 0; j < len(field[0]); j++ {
+	return snakePoses
+}
+
+func renderField(field [][]bool, snakePoses [][2]int) {
+
+	for _, pose := range snakePoses {
+		field[pose[0]][pose[1]] = true
+	}
+
+	for i := 0; i < fieldRow; i++ {
+		fmt.Println("_" + strings.Repeat("__", fieldCol))
+		for j := 0; j < fieldCol; j++ {
 			symbol := ""
 			if field[i][j] {
 				symbol = "*"
@@ -70,8 +80,17 @@ func main() {
 		}
 		fmt.Println()
 	}
-	fmt.Print("________________________________\n")
+	fmt.Println("_" + strings.Repeat("__", fieldCol))
+}
 
-	fmt.Printf("row: %d, column: %d\n", random/15, random%15)
-	fmt.Println(snakePoses)
+func main() {
+
+	field := make([][]bool, fieldRow)
+	for i := range field {
+		field[i] = make([]bool, fieldCol)
+	}
+
+	snakePoses := initSnake()
+
+	renderField(field, snakePoses)
 }
