@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strings"
+	"time"
+
+	"github.com/eiannone/keyboard"
 )
 
 var fieldRow = 10
 var fieldCol = 20
 var snakeLen = 6
-var direction = "d"
+var direction = "w"
 
 func comparePoses(snakePoses [][2]int, posVar [2]int) bool {
 	for _, val := range snakePoses {
@@ -104,17 +108,13 @@ func initSnake() ([][2]int, error) {
 	return snakePoses, nil
 }
 
-func renderField(field [][]bool, snakePoses [][2]int) {
-
-	for _, pose := range snakePoses {
-		field[pose[0]][pose[1]] = true
-	}
+func renderField(snakePoses [][2]int) {
 
 	for i := 0; i < fieldRow; i++ {
-		fmt.Println("_" + strings.Repeat("__", fieldCol))
+		fmt.Println("_" + strings.Repeat("__", fieldCol-1))
 		for j := 0; j < fieldCol; j++ {
 			symbol := ""
-			if field[i][j] {
+			if !comparePoses(snakePoses, [2]int{i, j}) {
 				if i == snakePoses[snakeLen-1][0] && j == snakePoses[snakeLen-1][1] {
 					symbol = "A"
 				} else {
@@ -127,45 +127,90 @@ func renderField(field [][]bool, snakePoses [][2]int) {
 		}
 		fmt.Println()
 	}
-	fmt.Println("_" + strings.Repeat("__", fieldCol))
+	fmt.Println("_" + strings.Repeat("__", fieldCol-1))
 }
 
-func moveSnake(snakePoses [][2]int) {
+func changeSlice(a [][2]int, b [][2]int) {
+	for i, _ := range a {
+		a[i] = b[i]
+	}
+}
+
+func border(pos [2]int) [2]int {
+	if pos[0] == 10 {
+		pos[0] = 0
+	}
+	if pos[1] == 20 {
+		pos[1] = 0
+	}
+	if pos[0] == -1 {
+		pos[0] = 9
+	}
+	if pos[1] == -1 {
+		pos[1] = 19
+	}
+	return pos
+}
+
+func moveSnake(snakePoses [][2]int) [][2]int {
 	switch direction {
 	case "w":
-		fmt.Print("w")
-		fmt.Print("w")
+
+		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0] - 1, snakePoses[len(snakePoses)-1][1]})
+		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
 	case "a":
-		fmt.Print("a")
-		fmt.Print("a")
+		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0], snakePoses[len(snakePoses)-1][1] - 1})
+		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
 	case "s":
-		fmt.Print("s")
-		fmt.Print("s")
+		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0] + 1, snakePoses[len(snakePoses)-1][1]})
+		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
 	case "d":
-		fmt.Print("d")
-		fmt.Print("d")
+		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0], snakePoses[len(snakePoses)-1][1] + 1})
+		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
+	}
+	return snakePoses
+}
+
+func handleInput() {
+	if err := keyboard.Open(); err != nil {
+		log.Fatal(err)
+	}
+	defer keyboard.Close()
+
+	for {
+		char, key, err := keyboard.GetKey()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		switch char {
+		case 'w':
+			direction = "w"
+		case 'a':
+			direction = "a"
+		case 's':
+			direction = "s"
+		case 'd':
+			direction = "d"
+		}
+		if key == keyboard.KeyEsc {
+			break
+		}
 	}
 }
 
 func main() {
 
-	field := make([][]bool, fieldRow)
-	for i := range field {
-		field[i] = make([]bool, fieldCol)
-	}
-
 	snakePoses, _ := initSnake()
-	fmt.Println(snakePoses)
 
-	renderField(field, snakePoses)
+	renderField(snakePoses)
 
-	for i := 0; ; i++ {
-		fmt.Println(i)
-		snakePoses, err := initSnake()
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			fmt.Println(snakePoses)
-		}
+	go handleInput()
+	time.Sleep(time.Second * 2)
+
+	for {
+		fmt.Print("\033[H\033[2J")
+		renderField(moveSnake(snakePoses))
+		time.Sleep(time.Millisecond * 500)
 	}
 }
