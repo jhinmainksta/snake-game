@@ -8,15 +8,19 @@ import (
 	"time"
 
 	"github.com/eiannone/keyboard"
+	"github.com/inancgumus/screen"
 )
 
 var fieldRow = 10
 var fieldCol = 20
 var snakeLen = 6
-var direction = "w"
+var direction = ""
+var selectedDirection = ""
+var snakePos = make([][2]int, snakeLen)
+var snakeSkin = make([]string, snakeLen)
 
-func comparePoses(snakePoses [][2]int, posVar [2]int) bool {
-	for _, val := range snakePoses {
+func containPos(snakePos [][2]int, posVar [2]int) bool {
+	for _, val := range snakePos {
 		if val == posVar {
 			return false
 		}
@@ -24,33 +28,33 @@ func comparePoses(snakePoses [][2]int, posVar [2]int) bool {
 	return true
 }
 
-func moveIsPossible(Poses [][2]int) bool {
+func moveIsPossible(Pos [][2]int) bool {
 
 	pos := make([][2]int, 0)
-	if Poses[0][0] != 0 {
-		posVar := [2]int{Poses[0][0] - 1, Poses[0][1]}
-		if comparePoses(Poses, posVar) {
+	if Pos[0][0] != 0 {
+		posVar := [2]int{Pos[0][0] - 1, Pos[0][1]}
+		if containPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
-	if Poses[0][0] != fieldRow-1 {
-		posVar := [2]int{Poses[0][0] + 1, Poses[0][1]}
-		if comparePoses(Poses, posVar) {
+	if Pos[0][0] != fieldRow-1 {
+		posVar := [2]int{Pos[0][0] + 1, Pos[0][1]}
+		if containPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
-	if Poses[0][1] != 0 {
-		posVar := [2]int{Poses[0][0], Poses[0][1] - 1}
-		if comparePoses(Poses, posVar) {
+	if Pos[0][1] != 0 {
+		posVar := [2]int{Pos[0][0], Pos[0][1] - 1}
+		if containPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
-	if Poses[0][1] != fieldCol-1 {
-		posVar := [2]int{Poses[0][0], Poses[0][1] + 1}
-		if comparePoses(Poses, posVar) {
+	if Pos[0][1] != fieldCol-1 {
+		posVar := [2]int{Pos[0][0], Pos[0][1] + 1}
+		if containPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
@@ -61,76 +65,72 @@ func moveIsPossible(Poses [][2]int) bool {
 	}
 }
 
-func initSnake() ([][2]int, error) {
+func initSnake() {
 
 	randRow := rand.Intn(fieldRow/2) + fieldRow/4
-
 	randCol := rand.Intn(fieldCol/2) + fieldCol/4
 
-	snakePoses := make([][2]int, snakeLen)
-	snakePoses[0] = [2]int{randRow, randCol}
+	snakePos[0] = [2]int{randRow, randCol}
 
 	for i := 1; i < snakeLen; i++ {
 		pos := make([][2]int, 0)
-		if snakePoses[i-1][0] != 0 {
-			posVar := [2]int{snakePoses[i-1][0] - 1, snakePoses[i-1][1]}
-			curPoses := append([][2]int{posVar}, snakePoses...)
-			if comparePoses(snakePoses, posVar) && moveIsPossible(curPoses) {
+		if snakePos[i-1][0] != 0 {
+			posVar := [2]int{snakePos[i-1][0] - 1, snakePos[i-1][1]}
+			curPos := append([][2]int{posVar}, snakePos...)
+			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
-		if snakePoses[i-1][0] != fieldRow-1 {
-			posVar := [2]int{snakePoses[i-1][0] + 1, snakePoses[i-1][1]}
-			curPoses := append([][2]int{posVar}, snakePoses...)
-			if comparePoses(snakePoses, posVar) && moveIsPossible(curPoses) {
+		if snakePos[i-1][0] != fieldRow-1 {
+			posVar := [2]int{snakePos[i-1][0] + 1, snakePos[i-1][1]}
+			curPos := append([][2]int{posVar}, snakePos...)
+			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
-		if snakePoses[i-1][1] != 0 {
-			posVar := [2]int{snakePoses[i-1][0], snakePoses[i-1][1] - 1}
-			curPoses := append([][2]int{posVar}, snakePoses...)
-			if comparePoses(snakePoses, posVar) && moveIsPossible(curPoses) {
+		if snakePos[i-1][1] != 0 {
+			posVar := [2]int{snakePos[i-1][0], snakePos[i-1][1] - 1}
+			curPos := append([][2]int{posVar}, snakePos...)
+			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
-		if snakePoses[i-1][1] != fieldCol-1 {
-			posVar := [2]int{snakePoses[i-1][0], snakePoses[i-1][1] + 1}
-			curPoses := append([][2]int{posVar}, snakePoses...)
-			if comparePoses(snakePoses, posVar) && moveIsPossible(curPoses) {
+		if snakePos[i-1][1] != fieldCol-1 {
+			posVar := [2]int{snakePos[i-1][0], snakePos[i-1][1] + 1}
+			curPos := append([][2]int{posVar}, snakePos...)
+			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
 
 				pos = append(pos, posVar)
 			}
 		}
-		rngPose := rand.Intn(len(pos))
-		snakePoses[i] = pos[rngPose]
+		rngPos := rand.Intn(len(pos))
+		snakePos[i] = pos[rngPos]
 	}
-
-	return snakePoses, nil
 }
 
-func renderField(snakePoses [][2]int) {
+func renderField() {
 
+	fmt.Println("┌" + strings.Repeat("─", fieldCol) + "┐")
 	for i := 0; i < fieldRow; i++ {
-		fmt.Println("_" + strings.Repeat("__", fieldCol-1))
+		fmt.Print("│")
+
 		for j := 0; j < fieldCol; j++ {
 			symbol := ""
-			if !comparePoses(snakePoses, [2]int{i, j}) {
-				if i == snakePoses[snakeLen-1][0] && j == snakePoses[snakeLen-1][1] {
-					symbol = "A"
-				} else {
-					symbol = "*"
-				}
+			if !containPos(snakePos, [2]int{i, j}) {
+				symbol = "■"
 			} else {
 				symbol = " "
 			}
-			fmt.Printf("%s|", symbol)
+			fmt.Printf("%s", symbol)
 		}
+
+		fmt.Print("│")
 		fmt.Println()
 	}
-	fmt.Println("_" + strings.Repeat("__", fieldCol-1))
+	fmt.Print("└" + strings.Repeat("─", fieldCol) + "┘")
 }
 
-func changeSlice(a [][2]int, b [][2]int) {
+func updateSnake(a [][2]int, b [][2]int) {
 	for i, _ := range a {
 		a[i] = b[i]
 	}
@@ -152,26 +152,25 @@ func border(pos [2]int) [2]int {
 	return pos
 }
 
-func moveSnake(snakePoses [][2]int) [][2]int {
+func moveSnake() {
 	switch direction {
 	case "w":
-
-		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0] - 1, snakePoses[len(snakePoses)-1][1]})
-		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0] - 1, snakePos[len(snakePos)-1][1]})
+		updateSnake(snakePos, append(snakePos[1:], nextPos))
 	case "a":
-		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0], snakePoses[len(snakePoses)-1][1] - 1})
-		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] - 1})
+		updateSnake(snakePos, append(snakePos[1:], nextPos))
 	case "s":
-		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0] + 1, snakePoses[len(snakePoses)-1][1]})
-		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0] + 1, snakePos[len(snakePos)-1][1]})
+		updateSnake(snakePos, append(snakePos[1:], nextPos))
 	case "d":
-		nextPose := border([2]int{snakePoses[len(snakePoses)-1][0], snakePoses[len(snakePoses)-1][1] + 1})
-		changeSlice(snakePoses, append(snakePoses[1:], nextPose))
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] + 1})
+		updateSnake(snakePos, append(snakePos[1:], nextPos))
 	}
-	return snakePoses
 }
 
 func handleInput() {
+
 	if err := keyboard.Open(); err != nil {
 		log.Fatal(err)
 	}
@@ -185,13 +184,13 @@ func handleInput() {
 
 		switch char {
 		case 'w':
-			direction = "w"
+			selectedDirection = "w"
 		case 'a':
-			direction = "a"
+			selectedDirection = "a"
 		case 's':
-			direction = "s"
+			selectedDirection = "s"
 		case 'd':
-			direction = "d"
+			selectedDirection = "d"
 		}
 		if key == keyboard.KeyEsc {
 			break
@@ -199,18 +198,30 @@ func handleInput() {
 	}
 }
 
+func setDirection() {
+	if !(selectedDirection == "w" && direction == "s" ||
+		selectedDirection == "s" && direction == "w" ||
+		selectedDirection == "a" && direction == "d" ||
+		selectedDirection == "d" && direction == "a") {
+		direction = selectedDirection
+	}
+
+}
+
 func main() {
 
-	snakePoses, _ := initSnake()
-
-	renderField(snakePoses)
+	initSnake()
+	renderField()
 
 	go handleInput()
 	time.Sleep(time.Second * 2)
 
 	for {
-		fmt.Print("\033[H\033[2J")
-		renderField(moveSnake(snakePoses))
+		screen.Clear()
+		screen.MoveTopLeft()
+		setDirection()
+		moveSnake()
+		renderField()
 		time.Sleep(time.Millisecond * 500)
 	}
 }
