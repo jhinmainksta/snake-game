@@ -17,10 +17,10 @@ var fieldRow = 10
 var fieldCol = 20
 var snakeLen = 6
 var direction = ""
-var selectedDirection = ""
+var selectedDirections [2]string
 var snakePos = make([][2]int, snakeLen)
 var food [2]int
-var gameSpeed = 150
+var gameSpeed = 120
 var gameScore = 0
 
 func moveIsPossible(Pos [][2]int) bool {
@@ -189,6 +189,7 @@ func handleInput() {
 	defer keyboard.Close()
 
 	for {
+
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			log.Fatal(err)
@@ -196,13 +197,30 @@ func handleInput() {
 
 		switch char {
 		case 'w':
-			selectedDirection = "w"
+			if selectedDirections[0] != "" {
+				selectedDirections[1] = "w"
+			} else if direction != "w" {
+				selectedDirections[0] = "w"
+			}
+
 		case 'a':
-			selectedDirection = "a"
+			if selectedDirections[0] != "" {
+				selectedDirections[1] = "a"
+			} else if direction != "a" {
+				selectedDirections[0] = "a"
+			}
 		case 's':
-			selectedDirection = "s"
+			if selectedDirections[0] != "" {
+				selectedDirections[1] = "s"
+			} else if direction != "s" {
+				selectedDirections[0] = "s"
+			}
 		case 'd':
-			selectedDirection = "d"
+			if selectedDirections[0] != "" {
+				selectedDirections[1] = "d"
+			} else if direction != "d" {
+				selectedDirections[0] = "d"
+			}
 		}
 		if key == keyboard.KeyEsc {
 			break
@@ -211,13 +229,18 @@ func handleInput() {
 }
 
 func setDirection() {
-	if selectedDirection != "" && !(selectedDirection == "w" && direction == "s" ||
-		selectedDirection == "s" && direction == "w" ||
-		selectedDirection == "a" && direction == "d" ||
-		selectedDirection == "d" && direction == "a") {
-		direction = selectedDirection
+	if selectedDirections[0] != "" {
+		if !(selectedDirections[0] == "w" && direction == "s" ||
+			selectedDirections[0] == "s" && direction == "w" ||
+			selectedDirections[0] == "a" && direction == "d" ||
+			selectedDirections[0] == "d" && direction == "a") {
+			direction = selectedDirections[0]
+		} else {
+			selectedDirections[1] = ""
+		}
+		selectedDirections[0] = selectedDirections[1]
+		selectedDirections[1] = ""
 	}
-
 }
 
 func renderField() {
