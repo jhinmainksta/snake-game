@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"snake/utils"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,8 @@ var direction = ""
 var selectedDirection = ""
 var snakePos = make([][2]int, snakeLen)
 var food [2]int
+var gameSpeed = 150
+var gameScore = 0
 
 func moveIsPossible(Pos [][2]int) bool {
 
@@ -126,35 +129,6 @@ func initSnake() {
 	}
 }
 
-func renderField() {
-
-	fmt.Println("┌─" + strings.Repeat("──", fieldCol) + "┐")
-	for i := 0; i < fieldRow; i++ {
-		fmt.Print("│ ")
-
-		for j := 0; j < fieldCol; j++ {
-			symbol := ""
-			if utils.ContainPos(snakePos, [2]int{i, j}) {
-				if [2]int{i, j} == snakePos[snakeLen-1] {
-					symbol = "☭"
-				} else {
-					symbol = "∼"
-				}
-			} else {
-				symbol = " "
-			}
-			if food == [2]int{i, j} {
-				symbol = "*"
-			}
-			fmt.Printf("%s ", symbol)
-		}
-
-		fmt.Print("│")
-		fmt.Println()
-	}
-	fmt.Print("└─" + strings.Repeat("──", fieldCol) + "┘")
-}
-
 func border(pos [2]int) [2]int {
 	if pos[0] == fieldRow {
 		pos[0] = 0
@@ -246,9 +220,46 @@ func setDirection() {
 
 }
 
-func main() {
+func renderField() {
 
+	scoreStr := strconv.Itoa(gameScore)
+	fmt.Println(strings.Repeat(" ", 2*fieldCol+1-len(scoreStr)) + scoreStr)
+
+	fmt.Println("┌─" + strings.Repeat("──", fieldCol) + "┐")
+	for i := 0; i < fieldRow; i++ {
+		fmt.Print("│ ")
+
+		for j := 0; j < fieldCol; j++ {
+			symbol := ""
+			if utils.ContainPos(snakePos, [2]int{i, j}) {
+				if [2]int{i, j} == snakePos[snakeLen-1] {
+					symbol = "☭"
+				} else {
+					symbol = "∼"
+				}
+			} else {
+				symbol = " "
+			}
+			if food == [2]int{i, j} {
+				symbol = "*"
+			}
+			fmt.Printf("%s ", symbol)
+		}
+
+		fmt.Print("│")
+		fmt.Println()
+	}
+	fmt.Print("└─" + strings.Repeat("──", fieldCol) + "┘")
+}
+
+func main() {
+	// fmt.Print("How fast would you like to play ( In miliseconds. More miliseconds, slower the game): ")
+	// fmt.Scan(&gameSpeed)
+
+	screen.Clear()
+	screen.MoveTopLeft()
 	fieldCol = 10
+
 	initSnake()
 	initFood()
 	renderField()
@@ -263,6 +274,7 @@ func main() {
 		if food == [2]int{-1, -1} {
 			initFood()
 			growSnake()
+			gameScore += 1
 		} else {
 			moveSnake()
 		}
@@ -278,6 +290,6 @@ func main() {
 			fmt.Println("You are proigral, prostofilya!")
 			break
 		}
-		time.Sleep(time.Millisecond * 150)
+		time.Sleep(time.Millisecond * time.Duration(gameSpeed))
 	}
 }
