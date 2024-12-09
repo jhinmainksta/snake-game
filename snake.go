@@ -106,28 +106,44 @@ func initSnake() {
 		rngPos := rand.Intn(len(pos))
 		snakePos[i] = pos[rngPos]
 	}
+
+	dx := snakePos[snakeLen-1][1] - snakePos[snakeLen-2][1]
+	dy := snakePos[snakeLen-1][0] - snakePos[snakeLen-2][0]
+
+	if dx == 1 {
+		direction = "d"
+	}
+	if dx == -1 {
+		direction = "a"
+	}
+	if dy == 1 {
+		direction = "s"
+	}
+	if dy == -1 {
+		direction = "w"
+	}
 }
 
 func renderField() {
 
-	fmt.Println("┌" + strings.Repeat("─", fieldCol) + "┐")
+	fmt.Println("┌─" + strings.Repeat("──", fieldCol) + "┐")
 	for i := 0; i < fieldRow; i++ {
-		fmt.Print("│")
+		fmt.Print("│ ")
 
 		for j := 0; j < fieldCol; j++ {
 			symbol := ""
 			if !containPos(snakePos, [2]int{i, j}) {
-				symbol = "■"
+				symbol = "*"
 			} else {
 				symbol = " "
 			}
-			fmt.Printf("%s", symbol)
+			fmt.Printf("%s ", symbol)
 		}
 
 		fmt.Print("│")
 		fmt.Println()
 	}
-	fmt.Print("└" + strings.Repeat("─", fieldCol) + "┘")
+	fmt.Print("└─" + strings.Repeat("──", fieldCol) + "┘")
 }
 
 func updateSnake(a [][2]int, b [][2]int) {
@@ -199,7 +215,7 @@ func handleInput() {
 }
 
 func setDirection() {
-	if !(selectedDirection == "w" && direction == "s" ||
+	if selectedDirection != "" && !(selectedDirection == "w" && direction == "s" ||
 		selectedDirection == "s" && direction == "w" ||
 		selectedDirection == "a" && direction == "d" ||
 		selectedDirection == "d" && direction == "a") {
