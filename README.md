@@ -9,6 +9,3 @@ From here you just need to run
 ```
 ./snake.exe
 ```
-and that's it.
-
-p.s. at least should work for Windows.
