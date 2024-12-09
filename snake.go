@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"snake/utils"
 	"strings"
 	"time"
 
@@ -17,44 +18,34 @@ var snakeLen = 6
 var direction = ""
 var selectedDirection = ""
 var snakePos = make([][2]int, snakeLen)
-var snakeSkin = make([]string, snakeLen)
-
-func containPos(snakePos [][2]int, posVar [2]int) bool {
-	for _, val := range snakePos {
-		if val == posVar {
-			return false
-		}
-	}
-	return true
-}
 
 func moveIsPossible(Pos [][2]int) bool {
 
 	pos := make([][2]int, 0)
 	if Pos[0][0] != 0 {
 		posVar := [2]int{Pos[0][0] - 1, Pos[0][1]}
-		if containPos(Pos, posVar) {
+		if !utils.ContainPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
 	if Pos[0][0] != fieldRow-1 {
 		posVar := [2]int{Pos[0][0] + 1, Pos[0][1]}
-		if containPos(Pos, posVar) {
+		if !utils.ContainPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
 	if Pos[0][1] != 0 {
 		posVar := [2]int{Pos[0][0], Pos[0][1] - 1}
-		if containPos(Pos, posVar) {
+		if !utils.ContainPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
 
 	if Pos[0][1] != fieldCol-1 {
 		posVar := [2]int{Pos[0][0], Pos[0][1] + 1}
-		if containPos(Pos, posVar) {
+		if !utils.ContainPos(Pos, posVar) {
 			pos = append(pos, posVar)
 		}
 	}
@@ -77,29 +68,28 @@ func initSnake() {
 		if snakePos[i-1][0] != 0 {
 			posVar := [2]int{snakePos[i-1][0] - 1, snakePos[i-1][1]}
 			curPos := append([][2]int{posVar}, snakePos...)
-			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
+			if !(utils.ContainPos(snakePos, posVar)) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
 		if snakePos[i-1][0] != fieldRow-1 {
 			posVar := [2]int{snakePos[i-1][0] + 1, snakePos[i-1][1]}
 			curPos := append([][2]int{posVar}, snakePos...)
-			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
+			if !(utils.ContainPos(snakePos, posVar)) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
 		if snakePos[i-1][1] != 0 {
 			posVar := [2]int{snakePos[i-1][0], snakePos[i-1][1] - 1}
 			curPos := append([][2]int{posVar}, snakePos...)
-			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
+			if !(utils.ContainPos(snakePos, posVar)) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
 		if snakePos[i-1][1] != fieldCol-1 {
 			posVar := [2]int{snakePos[i-1][0], snakePos[i-1][1] + 1}
 			curPos := append([][2]int{posVar}, snakePos...)
-			if containPos(snakePos, posVar) && moveIsPossible(curPos) {
-
+			if !(utils.ContainPos(snakePos, posVar)) && moveIsPossible(curPos) {
 				pos = append(pos, posVar)
 			}
 		}
@@ -132,7 +122,7 @@ func renderField() {
 
 		for j := 0; j < fieldCol; j++ {
 			symbol := ""
-			if !containPos(snakePos, [2]int{i, j}) {
+			if utils.ContainPos(snakePos, [2]int{i, j}) {
 				symbol = "*"
 			} else {
 				symbol = " "
@@ -146,24 +136,18 @@ func renderField() {
 	fmt.Print("└─" + strings.Repeat("──", fieldCol) + "┘")
 }
 
-func updateSnake(a [][2]int, b [][2]int) {
-	for i, _ := range a {
-		a[i] = b[i]
-	}
-}
-
 func border(pos [2]int) [2]int {
-	if pos[0] == 10 {
+	if pos[0] == fieldRow {
 		pos[0] = 0
 	}
-	if pos[1] == 20 {
+	if pos[1] == fieldCol {
 		pos[1] = 0
 	}
 	if pos[0] == -1 {
-		pos[0] = 9
+		pos[0] = fieldRow - 1
 	}
 	if pos[1] == -1 {
-		pos[1] = 19
+		pos[1] = fieldCol - 1
 	}
 	return pos
 }
@@ -172,16 +156,16 @@ func moveSnake() {
 	switch direction {
 	case "w":
 		nextPos := border([2]int{snakePos[len(snakePos)-1][0] - 1, snakePos[len(snakePos)-1][1]})
-		updateSnake(snakePos, append(snakePos[1:], nextPos))
+		utils.UpdSlice(snakePos, append(snakePos[1:], nextPos))
 	case "a":
 		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] - 1})
-		updateSnake(snakePos, append(snakePos[1:], nextPos))
+		utils.UpdSlice(snakePos, append(snakePos[1:], nextPos))
 	case "s":
 		nextPos := border([2]int{snakePos[len(snakePos)-1][0] + 1, snakePos[len(snakePos)-1][1]})
-		updateSnake(snakePos, append(snakePos[1:], nextPos))
+		utils.UpdSlice(snakePos, append(snakePos[1:], nextPos))
 	case "d":
 		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] + 1})
-		updateSnake(snakePos, append(snakePos[1:], nextPos))
+		utils.UpdSlice(snakePos, append(snakePos[1:], nextPos))
 	}
 }
 
@@ -238,6 +222,10 @@ func main() {
 		setDirection()
 		moveSnake()
 		renderField()
-		time.Sleep(time.Millisecond * 500)
+		if utils.ContainPos(snakePos[:snakeLen-1], snakePos[snakeLen-1]) {
+			fmt.Println("You are proigral, prostofilya!")
+			break
+		}
+		time.Sleep(time.Millisecond * 300)
 	}
 }
