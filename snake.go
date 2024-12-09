@@ -18,6 +18,7 @@ var snakeLen = 6
 var direction = ""
 var selectedDirection = ""
 var snakePos = make([][2]int, snakeLen)
+var food [2]int
 
 func moveIsPossible(Pos [][2]int) bool {
 
@@ -53,6 +54,17 @@ func moveIsPossible(Pos [][2]int) bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func initFood() {
+
+	food[0] = rand.Intn(fieldRow)
+	food[1] = rand.Intn(fieldCol)
+
+	for utils.ContainPos(snakePos, food) {
+		food[0] = rand.Intn(fieldRow)
+		food[1] = rand.Intn(fieldCol)
 	}
 }
 
@@ -123,9 +135,16 @@ func renderField() {
 		for j := 0; j < fieldCol; j++ {
 			symbol := ""
 			if utils.ContainPos(snakePos, [2]int{i, j}) {
-				symbol = "*"
+				if [2]int{i, j} == snakePos[snakeLen-1] {
+					symbol = "☭"
+				} else {
+					symbol = "∼"
+				}
 			} else {
 				symbol = " "
+			}
+			if food == [2]int{i, j} {
+				symbol = "*"
 			}
 			fmt.Printf("%s ", symbol)
 		}
@@ -169,6 +188,25 @@ func moveSnake() {
 	}
 }
 
+func growSnake() {
+	switch direction {
+	case "w":
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0] - 1, snakePos[len(snakePos)-1][1]})
+		snakePos = append(snakePos, nextPos)
+	case "a":
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] - 1})
+		snakePos = append(snakePos, nextPos)
+	case "s":
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0] + 1, snakePos[len(snakePos)-1][1]})
+		snakePos = append(snakePos, nextPos)
+	case "d":
+		nextPos := border([2]int{snakePos[len(snakePos)-1][0], snakePos[len(snakePos)-1][1] + 1})
+		snakePos = append(snakePos, nextPos)
+	}
+
+	snakeLen += 1
+}
+
 func handleInput() {
 
 	if err := keyboard.Open(); err != nil {
@@ -210,7 +248,9 @@ func setDirection() {
 
 func main() {
 
+	fieldCol = 10
 	initSnake()
+	initFood()
 	renderField()
 
 	go handleInput()
@@ -220,12 +260,24 @@ func main() {
 		screen.Clear()
 		screen.MoveTopLeft()
 		setDirection()
-		moveSnake()
+		if food == [2]int{-1, -1} {
+			initFood()
+			growSnake()
+		} else {
+			moveSnake()
+		}
+
+		if snakePos[snakeLen-1] == food {
+			food = [2]int{-1, -1}
+		}
+
 		renderField()
+
 		if utils.ContainPos(snakePos[:snakeLen-1], snakePos[snakeLen-1]) {
+			fmt.Println()
 			fmt.Println("You are proigral, prostofilya!")
 			break
 		}
-		time.Sleep(time.Millisecond * 300)
+		time.Sleep(time.Millisecond * 150)
 	}
 }
