@@ -13,8 +13,8 @@ import (
 	"github.com/inancgumus/screen"
 )
 
-var fieldRow = 10
-var fieldCol = 20
+var fieldRow = 8
+var fieldCol = 8
 var snakeLen = 6
 var direction = ""
 var selectedDirections [2]string
@@ -22,6 +22,8 @@ var snakePos = make([][2]int, snakeLen)
 var food [2]int
 var gameSpeed = 120
 var gameScore = 0
+
+var spaceChan = make(chan bool)
 
 func moveIsPossible(Pos [][2]int) bool {
 
@@ -189,10 +191,13 @@ func handleInput() {
 	defer keyboard.Close()
 
 	for {
-
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if key == keyboard.KeySpace {
+			spaceChan <- true
 		}
 
 		switch char {
@@ -272,16 +277,13 @@ func renderField() {
 		fmt.Print("│")
 		fmt.Println()
 	}
-	fmt.Print("└─" + strings.Repeat("──", fieldCol) + "┘")
+	fmt.Println("└─" + strings.Repeat("──", fieldCol) + "┘")
 }
 
 func main() {
-	// fmt.Print("How fast would you like to play ( In miliseconds. More miliseconds, slower the game): ")
-	// fmt.Scan(&gameSpeed)
 
 	screen.Clear()
 	screen.MoveTopLeft()
-	fieldCol = 10
 
 	initSnake()
 	initFood()
@@ -290,29 +292,43 @@ func main() {
 	go handleInput()
 	time.Sleep(time.Second * 2)
 
+	isPaused := false
+
 	for {
-		screen.Clear()
-		screen.MoveTopLeft()
-		setDirection()
-		if food == [2]int{-1, -1} {
-			initFood()
-			growSnake()
-			gameScore += 1
-		} else {
-			moveSnake()
+		select {
+		case <-spaceChan:
+			isPaused = !isPaused
+			if isPaused == true {
+				fmt.Println("pause")
+			}
+		default:
+			if !isPaused {
+				screen.Clear()
+				screen.MoveTopLeft()
+				setDirection()
+				if food == [2]int{-1, -1} {
+					initFood()
+					growSnake()
+					gameScore += 1
+				} else {
+					moveSnake()
+				}
+
+				if snakePos[snakeLen-1] == food {
+					food = [2]int{-1, -1}
+				}
+
+				renderField()
+
+				if utils.ContainPos(snakePos[:snakeLen-1], snakePos[snakeLen-1]) {
+					fmt.Println("You are proigral, prostofilya!")
+					return
+				}
+				time.Sleep(time.Millisecond * time.Duration(gameSpeed))
+			} else {
+				time.Sleep(100 * time.Millisecond)
+			}
 		}
 
-		if snakePos[snakeLen-1] == food {
-			food = [2]int{-1, -1}
-		}
-
-		renderField()
-
-		if utils.ContainPos(snakePos[:snakeLen-1], snakePos[snakeLen-1]) {
-			fmt.Println()
-			fmt.Println("You are proigral, prostofilya!")
-			break
-		}
-		time.Sleep(time.Millisecond * time.Duration(gameSpeed))
 	}
 }
