@@ -13,6 +13,15 @@ import (
 	"github.com/inancgumus/screen"
 )
 
+type str struct {
+	balance int
+	Name    string
+}
+
+func newStr(balance int, Name string) *str {
+	return &str{balance: balance, Name: Name}
+}
+
 var fieldRow = 8
 var fieldCol = 8
 var snakeLen = 6
@@ -20,7 +29,7 @@ var direction = ""
 var selectedDirections [2]string
 var snakePos = make([][2]int, snakeLen)
 var food [2]int
-var gameSpeed = 120
+var gameSpeed = 170
 var gameScore = 0
 
 var spaceChan = make(chan bool)
@@ -200,27 +209,26 @@ func handleInput() {
 			spaceChan <- true
 		}
 
-		switch char {
-		case 'w':
+		switch {
+		case char == 'w' || key == keyboard.KeyArrowUp:
 			if selectedDirections[0] != "" {
 				selectedDirections[1] = "w"
 			} else if direction != "w" {
 				selectedDirections[0] = "w"
 			}
-
-		case 'a':
+		case char == 'a' || key == keyboard.KeyArrowLeft:
 			if selectedDirections[0] != "" {
 				selectedDirections[1] = "a"
 			} else if direction != "a" {
 				selectedDirections[0] = "a"
 			}
-		case 's':
+		case char == 's' || key == keyboard.KeyArrowDown:
 			if selectedDirections[0] != "" {
 				selectedDirections[1] = "s"
 			} else if direction != "s" {
 				selectedDirections[0] = "s"
 			}
-		case 'd':
+		case char == 'd' || key == keyboard.KeyArrowRight:
 			if selectedDirections[0] != "" {
 				selectedDirections[1] = "d"
 			} else if direction != "d" {
@@ -329,6 +337,6 @@ func main() {
 				time.Sleep(100 * time.Millisecond)
 			}
 		}
-
 	}
+
 }
