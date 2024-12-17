@@ -10,6 +10,12 @@ import (
 	"github.com/inancgumus/screen"
 )
 
+const (
+	defaultGameSpeed = 170
+	defaultRow       = 10
+	defaultCol       = 12
+)
+
 type Game struct {
 	gameSpeed        int
 	escChan          chan struct{}
@@ -17,7 +23,7 @@ type Game struct {
 	pauseChan        chan struct{}
 	isStarted        bool
 	startChan        chan struct{}
-	gameoverChan     chan struct{}
+	toMenu           bool
 	snakeLen         int
 	directionsQuerry [2]string
 	field            *Field
@@ -25,18 +31,18 @@ type Game struct {
 
 func InitGame() *Game {
 	return &Game{
-		gameSpeed:        170,
+		gameSpeed:        defaultGameSpeed,
 		escChan:          make(chan struct{}),
 		isPaused:         false,
 		pauseChan:        make(chan struct{}),
 		isStarted:        false,
 		startChan:        make(chan struct{}),
-		gameoverChan:     make(chan struct{}),
+		toMenu:           false,
 		snakeLen:         6,
 		directionsQuerry: [2]string{},
 		field: &Field{
-			row:   10,
-			col:   10,
+			row:   defaultRow,
+			col:   defaultCol,
 			score: 0,
 			food:  [2]int{},
 			snake: &Snake{},
@@ -52,16 +58,24 @@ func (g *Game) runGame() {
 	g.field.initSnake(g.snakeLen)
 	g.field.initFood()
 	g.field.score = 0
+
+	fmt.Println()
 	g.field.renderField()
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 1)
 
 	for {
 		select {
 		case <-g.escChan:
+			g.isPaused = false
+			g.toMenu = false
+			g.isStarted = false
 			return
 		case <-g.pauseChan:
 			g.isPaused = !g.isPaused
+			if g.isPaused {
+				g.field.renderInfo()
+			}
 		default:
 			if !g.isPaused {
 
@@ -69,11 +83,10 @@ func (g *Game) runGame() {
 				screen.MoveTopLeft()
 				g.setDirection()
 
-				msg := g.field.ProcessTheMove()
-				if msg != "" {
-					fmt.Println(msg)
-					g.isStarted = !g.isStarted
-					time.Sleep(time.Second * 1)
+				if failed := g.field.ProcessTheMove(); failed {
+					fmt.Println("You proigral, prostofilya))0)")
+					g.toMenu = true
+					g.isPaused = false
 					return
 				}
 				time.Sleep(time.Millisecond * time.Duration(g.gameSpeed))
@@ -84,16 +97,45 @@ func (g *Game) runGame() {
 	}
 }
 
+func (g *Game) afterGame() {
+	if !g.toMenu {
+		return
+	}
+
+	defer func() { g.toMenu = false }()
+
+	fmt.Println()
+	fmt.Println("┌─────────────────────┐")
+	fmt.Println("│  Enter - next game  │")
+	fmt.Println("│    Esc - menu       │")
+	fmt.Println("└─────────────────────┘")
+	for {
+		select {
+		case <-g.startChan:
+			return
+		case <-g.escChan:
+			g.isStarted = false
+			return
+		}
+	}
+}
+
 func (g *Game) StartMenu() {
 	for {
 		screen.Clear()
 		screen.MoveTopLeft()
-		fmt.Println("->     ~~~snake~game~~☭ *      <-")
-		fmt.Println("->  press Enter to play snake  <-")
-		fmt.Println("->      press Esc to exit      <-")
+		fmt.Println("┌─────────────────────────────┐")
+		fmt.Println("│     ~~~snake~game~~☭ *      │")
+		fmt.Println("│                             │")
+		fmt.Println("│  press Enter to play snake  │")
+		fmt.Println("│      press Esc to exit      │")
+		fmt.Println("└─────────────────────────────┘")
 		select {
 		case <-g.startChan:
-			g.runGame()
+			for g.isStarted {
+				g.runGame()
+				g.afterGame()
+			}
 		case <-g.escChan:
 			screen.Clear()
 			screen.MoveTopLeft()
@@ -126,8 +168,13 @@ func (g *Game) HandleInput() {
 			}
 		} else {
 			switch {
+			case key == keyboard.KeyEnter:
+				g.startChan <- struct{}{}
+
 			case key == keyboard.KeySpace:
-				g.pauseChan <- struct{}{}
+				if !g.toMenu {
+					g.pauseChan <- struct{}{}
+				}
 			case key == keyboard.KeyEsc:
 				g.isStarted = false
 				g.escChan <- struct{}{}

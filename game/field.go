@@ -153,9 +153,17 @@ func (f *Field) initFood() {
 	}
 }
 
-func (f *Field) renderField() {
+func (f *Field) renderInfo() {
+	fmt.Println(strings.Repeat(" ", 2*f.col/2+1-3) + "paused")
+
+}
+
+func (f *Field) renderScore() {
 	scoreStr := strconv.Itoa(f.score)
 	fmt.Println(strings.Repeat(" ", 2*f.col+1-len(scoreStr)) + scoreStr)
+}
+
+func (f *Field) renderField() {
 
 	fmt.Println("┌" + strings.Repeat("──", f.col) + "┐")
 
@@ -190,7 +198,7 @@ func (f *Field) renderField() {
 	fmt.Println("└" + strings.Repeat("──", f.col) + "┘")
 }
 
-func (f *Field) ProcessTheMove() string {
+func (f *Field) ProcessTheMove() bool {
 	if f.snake.poses[f.snake.len-1] == f.food {
 		f.growSnake()
 		f.initFood()
@@ -198,10 +206,8 @@ func (f *Field) ProcessTheMove() string {
 		f.moveSnake()
 	}
 
+	f.renderScore()
 	f.renderField()
 
-	if utils.ContainPos(f.snake.poses[:f.snake.len-1], f.snake.poses[f.snake.len-1]) {
-		return "You are proigral, prostofilya!"
-	}
-	return ""
+	return utils.ContainPos(f.snake.poses[:f.snake.len-1], f.snake.poses[f.snake.len-1])
 }
