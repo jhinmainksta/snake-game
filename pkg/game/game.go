@@ -12,18 +12,19 @@ import (
 
 const (
 	defaultGameSpeed = 150
-	defaultRow       = 8
-	defaultCol       = 10
+	defaultRow       = 10
+	defaultCol       = 12
 )
 
 type Game struct {
+	escChan   chan struct{}
+	isPaused  bool
+	pauseChan chan struct{}
+	isStarted bool
+	startChan chan struct{}
+	toMenu    bool
+
 	gameSpeed        int
-	escChan          chan struct{}
-	isPaused         bool
-	pauseChan        chan struct{}
-	isStarted        bool
-	startChan        chan struct{}
-	toMenu           bool
 	snakeLen         int
 	directionsQuerry [2]string
 	field            *Field
@@ -31,13 +32,14 @@ type Game struct {
 
 func InitGame() *Game {
 	return &Game{
+		escChan:   make(chan struct{}),
+		isPaused:  false,
+		pauseChan: make(chan struct{}),
+		isStarted: false,
+		startChan: make(chan struct{}),
+		toMenu:    false,
+
 		gameSpeed:        defaultGameSpeed,
-		escChan:          make(chan struct{}),
-		isPaused:         false,
-		pauseChan:        make(chan struct{}),
-		isStarted:        false,
-		startChan:        make(chan struct{}),
-		toMenu:           false,
 		snakeLen:         6,
 		directionsQuerry: [2]string{},
 		field: &Field{

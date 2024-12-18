@@ -57,7 +57,7 @@ func possibleMoves(Pos [][2]int, col, row int) bool {
 		}
 	}
 
-	if len(pos) > 1 {
+	if len(pos) > 0 {
 		return true
 	} else {
 		return false
