@@ -15,11 +15,12 @@ type Snake struct {
 }
 
 type Field struct {
-	row   int
-	col   int
-	score int
-	food  [2]int
-	snake *Snake
+	row        int
+	col        int
+	borderMode bool
+	score      int
+	food       [2]int
+	snake      *Snake
 }
 
 func (f *Field) initSnake(length int) {
@@ -31,7 +32,9 @@ func (f *Field) initSnake(length int) {
 	snakePos[0] = [2]int{randRow, randCol}
 
 	for i := 1; i < length; i++ {
+
 		poses := make([][2]int, 0)
+
 		if snakePos[i-1][0] != 0 {
 			newPos := [2]int{snakePos[i-1][0] - 1, snakePos[i-1][1]}
 			curPos := append([][2]int{newPos}, snakePos...)
@@ -97,51 +100,54 @@ func (f *Field) initSnake(length int) {
 }
 
 func (f *Field) moveSnake() {
+
+	nextPos := [2]int{}
 	switch f.snake.direction {
 	case "w":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0] - 1, f.snake.poses[len(f.snake.poses)-1][1]}
-		nextPos = border(nextPos, f.row, f.col)
-		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
+		nextPos = [2]int{f.snake.poses[len(f.snake.poses)-1][0] - 1, f.snake.poses[len(f.snake.poses)-1][1]}
 	case "a":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] - 1}
-		nextPos = border(nextPos, f.row, f.col)
-		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
+		nextPos = [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] - 1}
 	case "s":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0] + 1, f.snake.poses[len(f.snake.poses)-1][1]}
-		nextPos = border(nextPos, f.row, f.col)
-		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
+		nextPos = [2]int{f.snake.poses[len(f.snake.poses)-1][0] + 1, f.snake.poses[len(f.snake.poses)-1][1]}
 	case "d":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] + 1}
-		nextPos = border(nextPos, f.row, f.col)
-		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
-	}
-}
-
-func (f *Field) growSnake() {
-
-	switch f.snake.direction {
-	case "w":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0] - 1, f.snake.poses[len(f.snake.poses)-1][1]}
-		nextPos = border(nextPos, f.row, f.col)
-		f.snake.poses = append(f.snake.poses, nextPos)
-	case "a":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] - 1}
-		nextPos = border(nextPos, f.row, f.col)
-		f.snake.poses = append(f.snake.poses, nextPos)
-	case "s":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0] + 1, f.snake.poses[len(f.snake.poses)-1][1]}
-		nextPos = border(nextPos, f.row, f.col)
-		f.snake.poses = append(f.snake.poses, nextPos)
-	case "d":
-		nextPos := [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] + 1}
-		nextPos = border(nextPos, f.row, f.col)
-		f.snake.poses = append(f.snake.poses, nextPos)
+		nextPos = [2]int{f.snake.poses[len(f.snake.poses)-1][0], f.snake.poses[len(f.snake.poses)-1][1] + 1}
 	}
 
-	f.snake.len += 1
-	f.score += 1
+	if !f.borderMode {
+		nextPos = border(nextPos, f.row, f.col)
+	}
+
+	if f.foodIsEaten() {
+		f.snake.poses = append(f.snake.poses, nextPos)
+		f.snake.len += 1
+		f.score += 1
+		f.initFood()
+	} else {
+		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
+	}
+
 }
 
+func (f *Field) foodIsEaten() bool {
+	return f.snake.poses[f.snake.len-1] == f.food
+}
+
+func (f *Field) ProcessTheMove() bool {
+
+	f.moveSnake()
+	f.renderScore()
+	f.renderField()
+
+	snakeHead := f.snake.poses[f.snake.len-1]
+	snakeHitItself := utils.ContainPos(f.snake.poses[:f.snake.len-1], snakeHead)
+	snakeHitTheWall := false
+
+	if f.borderMode {
+		snakeHitTheWall = snakeHead[0] == -1 || snakeHead[0] == f.row || snakeHead[1] == -1 || snakeHead[1] == f.col
+	}
+
+	return snakeHitItself || snakeHitTheWall
+}
 func (f *Field) initFood() {
 
 	f.food[0] = rand.Intn(f.row)
@@ -195,18 +201,4 @@ func (f *Field) renderField() {
 	}
 
 	fmt.Println("└" + strings.Repeat("──", f.col) + "┘")
-}
-
-func (f *Field) ProcessTheMove() bool {
-	if f.snake.poses[f.snake.len-1] == f.food {
-		f.initFood()
-		f.growSnake()
-	} else {
-		f.moveSnake()
-	}
-
-	f.renderScore()
-	f.renderField()
-
-	return utils.ContainPos(f.snake.poses[:f.snake.len-1], f.snake.poses[f.snake.len-1])
 }

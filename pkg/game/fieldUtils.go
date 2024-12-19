@@ -57,9 +57,6 @@ func possibleMoves(Pos [][2]int, col, row int) bool {
 		}
 	}
 
-	if len(pos) > 0 {
-		return true
-	} else {
-		return false
-	}
+	// test gives an error if there is more than 0
+	return len(pos) > 0
 }

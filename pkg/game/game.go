@@ -17,12 +17,13 @@ const (
 )
 
 type Game struct {
-	escChan   chan struct{}
-	isPaused  bool
-	pauseChan chan struct{}
-	isStarted bool
-	startChan chan struct{}
-	toMenu    bool
+	escChan    chan struct{}
+	isPaused   bool
+	pauseChan  chan struct{}
+	isStarted  bool
+	startChan  chan struct{}
+	toMenu     bool
+	borderChan chan struct{}
 
 	gameSpeed        int
 	snakeLen         int
@@ -32,22 +33,24 @@ type Game struct {
 
 func InitGame() *Game {
 	return &Game{
-		escChan:   make(chan struct{}),
-		isPaused:  false,
-		pauseChan: make(chan struct{}),
-		isStarted: false,
-		startChan: make(chan struct{}),
-		toMenu:    false,
+		escChan:    make(chan struct{}),
+		isPaused:   false,
+		pauseChan:  make(chan struct{}),
+		isStarted:  false,
+		startChan:  make(chan struct{}),
+		toMenu:     false,
+		borderChan: make(chan struct{}),
 
 		gameSpeed:        defaultGameSpeed,
 		snakeLen:         6,
 		directionsQuerry: [2]string{},
 		field: &Field{
-			row:   defaultRow,
-			col:   defaultCol,
-			score: 0,
-			food:  [2]int{},
-			snake: &Snake{},
+			row:        defaultRow,
+			col:        defaultCol,
+			borderMode: false,
+			score:      0,
+			food:       [2]int{},
+			snake:      &Snake{},
 		},
 	}
 }
@@ -133,12 +136,17 @@ func (g *Game) StartMenu() {
 	for {
 		screen.Clear()
 		screen.MoveTopLeft()
-		fmt.Println("┌─────────────────────────────┐")
-		fmt.Println("│     ~~~snake~game~~☭ *      │")
-		fmt.Println("│                             │")
-		fmt.Println("│  press Enter to play snake  │")
-		fmt.Println("│      press Esc to exit      │")
-		fmt.Println("└─────────────────────────────┘")
+		fmt.Println("        ~~~snake~game~~☭ *        ")
+		fmt.Println()
+		if g.field.borderMode {
+			fmt.Println("         border mode: on           ")
+		} else {
+			fmt.Println("         border mode: off          ")
+		}
+		fmt.Println()
+		fmt.Println(" press Enter to play snake         ")
+		fmt.Println(" press Esc to exit                 ")
+		fmt.Println(" press Space to switch border mode ")
 		select {
 		case <-g.startChan:
 			for g.isStarted {
@@ -149,6 +157,8 @@ func (g *Game) StartMenu() {
 			screen.Clear()
 			screen.MoveTopLeft()
 			os.Exit(0)
+		case <-g.borderChan:
+			g.field.borderMode = !g.field.borderMode
 		}
 	}
 }
@@ -174,11 +184,15 @@ func (g *Game) HandleInput() {
 				g.startChan <- struct{}{}
 			case keyboard.KeyEsc:
 				g.escChan <- struct{}{}
+			case keyboard.KeySpace:
+				g.borderChan <- struct{}{}
 			}
 		} else {
 			switch {
 			case key == keyboard.KeyEnter:
-				g.startChan <- struct{}{}
+				if g.toMenu {
+					g.startChan <- struct{}{}
+				}
 			case key == keyboard.KeySpace:
 				if !g.toMenu {
 					g.pauseChan <- struct{}{}
