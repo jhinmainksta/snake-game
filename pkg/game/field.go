@@ -20,18 +20,19 @@ type Field struct {
 	borderMode bool
 	score      int
 	food       [2]int
+	snakeLen   int
 	snake      *Snake
 }
 
-func (f *Field) initSnake(length int) {
+func (f *Field) initSnake() {
 
 	randRow := rand.Intn(f.row/2) + f.row/4
 	randCol := rand.Intn(f.col/2) + f.col/4
 
-	snakePos := make([][2]int, length)
+	snakePos := make([][2]int, f.snakeLen)
 	snakePos[0] = [2]int{randRow, randCol}
 
-	for i := 1; i < length; i++ {
+	for i := 1; i < f.snakeLen; i++ {
 
 		poses := make([][2]int, 0)
 
@@ -71,8 +72,8 @@ func (f *Field) initSnake(length int) {
 		snakePos[i] = poses[rngPos]
 	}
 
-	dx := snakePos[length-1][1] - snakePos[length-2][1]
-	dy := snakePos[length-1][0] - snakePos[length-2][0]
+	dx := snakePos[f.snakeLen-1][1] - snakePos[f.snakeLen-2][1]
+	dy := snakePos[f.snakeLen-1][0] - snakePos[f.snakeLen-2][0]
 
 	direction := ""
 
@@ -95,7 +96,7 @@ func (f *Field) initSnake(length int) {
 	f.snake = &Snake{
 		direction: direction,
 		poses:     snakePos,
-		len:       length,
+		len:       f.snakeLen,
 	}
 }
 
@@ -135,7 +136,7 @@ func (f *Field) foodIsEaten() bool {
 func (f *Field) ProcessTheMove() bool {
 
 	f.moveSnake()
-	f.renderScore()
+	f.renderScoreAndMode()
 	f.renderField()
 
 	snakeHead := f.snake.poses[f.snake.len-1]
@@ -163,9 +164,15 @@ func (f *Field) renderInfo() {
 	fmt.Println(strings.Repeat(" ", 2*f.col/2+1-3) + "paused")
 }
 
-func (f *Field) renderScore() {
+func (f *Field) renderScoreAndMode() {
 	scoreStr := strconv.Itoa(f.score)
-	fmt.Println(strings.Repeat(" ", 2*f.col+1-len(scoreStr)) + scoreStr)
+	mode := "off"
+	if f.borderMode {
+		mode = "on"
+	}
+
+	msg := "borders " + mode
+	fmt.Println(msg + strings.Repeat(" ", 2*f.col+1-len(scoreStr)-len(msg)) + scoreStr)
 }
 
 func (f *Field) renderField() {

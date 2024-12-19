@@ -26,7 +26,6 @@ type Game struct {
 	borderChan chan struct{}
 
 	gameSpeed        int
-	snakeLen         int
 	directionsQuerry [2]string
 	field            *Field
 }
@@ -42,7 +41,6 @@ func InitGame() *Game {
 		borderChan: make(chan struct{}),
 
 		gameSpeed:        defaultGameSpeed,
-		snakeLen:         6,
 		directionsQuerry: [2]string{},
 		field: &Field{
 			row:        defaultRow,
@@ -50,6 +48,7 @@ func InitGame() *Game {
 			borderMode: false,
 			score:      0,
 			food:       [2]int{},
+			snakeLen:   6,
 			snake:      &Snake{},
 		},
 	}
@@ -60,7 +59,7 @@ func (g *Game) runGame() {
 	screen.Clear()
 	screen.MoveTopLeft()
 
-	g.field.initSnake(g.snakeLen)
+	g.field.initSnake()
 	g.field.initFood()
 	g.field.score = 0
 
@@ -94,7 +93,7 @@ func (g *Game) runGame() {
 					g.isPaused = false
 					return
 				}
-				if g.field.snake.len == g.field.col*g.field.row {
+				if g.field.snakeLen == g.field.col*g.field.row {
 					fmt.Println("Luchshiy iz lyudey pered monitorom, graz!")
 					time.Sleep(time.Second * 2)
 					g.toMenu = true
