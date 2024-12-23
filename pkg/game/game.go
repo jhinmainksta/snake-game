@@ -1,19 +1,19 @@
 package game
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/eiannone/keyboard"
-	"github.com/inancgumus/screen"
+	"github.com/nsf/termbox-go"
 )
 
 const (
 	defaultGameSpeed = 150
 	defaultRow       = 10
 	defaultCol       = 12
+	defaultColour    = termbox.ColorDefault
 )
 
 type Game struct {
@@ -48,7 +48,7 @@ func InitGame() *Game {
 			borderMode: false,
 			score:      0,
 			food:       [2]int{},
-			snakeLen:   6,
+			snakeLen:   4,
 			snake:      &Snake{},
 		},
 	}
@@ -56,15 +56,12 @@ func InitGame() *Game {
 
 func (g *Game) runGame() {
 
-	screen.Clear()
-	screen.MoveTopLeft()
-
 	g.field.initSnake()
 	g.field.initFood()
 	g.field.score = 0
 
-	fmt.Println()
 	g.field.renderField()
+	g.field.renderScoreAndMode()
 
 	time.Sleep(time.Second * 1)
 
@@ -82,20 +79,18 @@ func (g *Game) runGame() {
 			}
 		default:
 			if !g.isPaused {
-
-				screen.Clear()
-				screen.MoveTopLeft()
 				g.setDirection()
 
 				if failed := g.field.ProcessTheMove(); failed {
-					fmt.Println("You proigral, prostofilya))0)")
+
+					g.renderLossMsg()
 					g.toMenu = true
 					g.isPaused = false
 					return
 				}
 				if g.field.snakeLen == g.field.col*g.field.row {
-					fmt.Println("Luchshiy iz lyudey pered monitorom, graz!")
-					time.Sleep(time.Second * 2)
+
+					g.renderWinMsg()
 					g.toMenu = true
 					g.isPaused = false
 					return
@@ -115,11 +110,8 @@ func (g *Game) afterGame() {
 
 	defer func() { g.toMenu = false }()
 
-	fmt.Println()
-	fmt.Println("┌─────────────────────┐")
-	fmt.Println("│  Enter - next game  │")
-	fmt.Println("│    Esc - menu       │")
-	fmt.Println("└─────────────────────┘")
+	g.field.renderAfterGame()
+
 	for {
 		select {
 		case <-g.startChan:
@@ -132,20 +124,15 @@ func (g *Game) afterGame() {
 }
 
 func (g *Game) StartMenu() {
+
+	err := termbox.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer termbox.Close()
+
 	for {
-		screen.Clear()
-		screen.MoveTopLeft()
-		fmt.Println("        ~~~snake~game~~☭ *        ")
-		fmt.Println()
-		if g.field.borderMode {
-			fmt.Println("         border mode: on           ")
-		} else {
-			fmt.Println("         border mode: off          ")
-		}
-		fmt.Println()
-		fmt.Println(" press Enter to play snake         ")
-		fmt.Println(" press Esc to exit                 ")
-		fmt.Println(" press Space to switch border mode ")
+		g.renderMenu()
 		select {
 		case <-g.startChan:
 			for g.isStarted {
@@ -153,8 +140,8 @@ func (g *Game) StartMenu() {
 				g.afterGame()
 			}
 		case <-g.escChan:
-			screen.Clear()
-			screen.MoveTopLeft()
+			termbox.Clear(defaultColour, defaultColour)
+			termbox.Flush()
 			os.Exit(0)
 		case <-g.borderChan:
 			g.field.borderMode = !g.field.borderMode

@@ -14,7 +14,7 @@ func TestInitSnake(t *testing.T) {
 			}
 		}()
 		for range 1000 {
-			g.field.initSnake(6)
+			g.field.initSnake()
 		}
 		return nil
 
