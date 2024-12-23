@@ -19,6 +19,7 @@ type Field struct {
 	row        int
 	col        int
 	borderMode bool
+	wasEaten   bool
 	score      int
 	food       [2]int
 	snakeLen   int
@@ -119,13 +120,18 @@ func (f *Field) moveSnake() {
 		nextPos = border(nextPos, f.row, f.col)
 	}
 
-	if f.foodIsEaten() {
+	if f.wasEaten {
 		f.snake.poses = append(f.snake.poses, nextPos)
-		f.snake.len += 1
-		f.score += 1
-		f.initFood()
+		f.snake.len++
+		f.wasEaten = false
 	} else {
 		utils.UpdSlice(f.snake.poses, append(f.snake.poses[1:], nextPos))
+	}
+
+	if f.foodIsEaten() {
+		f.wasEaten = true
+		f.score += 1
+		f.initFood()
 	}
 }
 
@@ -137,8 +143,7 @@ func (f *Field) ProcessTheMove() bool {
 
 	f.moveSnake()
 
-	f.renderField()
-	f.renderScoreAndMode()
+	f.renderGame()
 
 	snakeHead := f.snake.poses[f.snake.len-1]
 	snakeHitItself := utils.ContainPos(f.snake.poses[:f.snake.len-1], snakeHead)
@@ -150,6 +155,7 @@ func (f *Field) ProcessTheMove() bool {
 
 	return snakeHitItself || snakeHitTheWall
 }
+
 func (f *Field) initFood() {
 
 	f.food[0] = rand.Intn(f.row)
@@ -172,34 +178,30 @@ func (f *Field) renderScoreAndMode() {
 	if f.borderMode {
 		msg = "borders on"
 	}
-	backspace := 2*f.col + 1 - len(scoreStr) - len(msg)
+	backspace := (f.col+1)*2 - len(scoreStr) - len(msg)
 	utils.Tbprint(0, 0, defaultColour, defaultColour, msg+strings.Repeat(" ", backspace)+scoreStr)
-	termbox.Flush()
 }
 
 func (f *Field) renderField() {
 
-	termbox.Clear(defaultColour, defaultColour)
-
-	utils.Tbprint(0, 1, defaultColour, defaultColour, "┌"+strings.Repeat("─", f.col*2)+"┐")
+	utils.Tbprint(0, 1, defaultColour, defaultColour, "┌"+strings.Repeat("─", (f.col+1)*2-1)+"┐")
 
 	for i := 1; i < f.row+1; i++ {
 		termbox.SetCell(0, i+1, '│', defaultColour, defaultColour)
-		termbox.SetCell(f.col*2+1, i+1, '│', defaultColour, defaultColour)
+		termbox.SetCell((f.col+1)*2, i+1, '│', defaultColour, defaultColour)
 	}
 
-	termbox.SetCell(f.food[1]*2+1, f.food[0]+2, '*', termbox.ColorRed, defaultColour)
+	termbox.SetCell((f.food[1]+1)*2, f.food[0]+2, '*', termbox.ColorRed, defaultColour)
+
+	utils.Tbprint(0, f.row+2, defaultColour, defaultColour, "└"+strings.Repeat("─", (f.col+1)*2-1)+"┘")
 
 	for i, pos := range f.snake.poses {
 		char := '~'
 		if i == f.snake.len-1 {
 			char = '☭'
 		}
-		termbox.SetCell(pos[1]*2+1, pos[0]+2, char, termbox.ColorGreen, defaultColour)
+		termbox.SetCell((pos[1]+1)*2, pos[0]+2, char, termbox.ColorGreen, defaultColour)
 	}
-
-	utils.Tbprint(0, f.row+2, defaultColour, defaultColour, "└"+strings.Repeat("─", f.col*2)+"┘")
-	termbox.Flush()
 }
 
 func (f *Field) renderAfterGame() {
@@ -208,6 +210,13 @@ func (f *Field) renderAfterGame() {
 	utils.Tbprint(2, f.row+5, defaultColour, defaultColour, "│  Enter - next game  │")
 	utils.Tbprint(2, f.row+6, defaultColour, defaultColour, "│    Esc - menu       │")
 	utils.Tbprint(2, f.row+7, defaultColour, defaultColour, "└─────────────────────┘")
+	termbox.Flush()
+}
+
+func (f *Field) renderGame() {
+	termbox.Clear(defaultColour, defaultColour)
+	f.renderField()
+	f.renderScoreAndMode()
 	termbox.Flush()
 }
 

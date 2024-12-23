@@ -46,6 +46,7 @@ func InitGame() *Game {
 			row:        defaultRow,
 			col:        defaultCol,
 			borderMode: false,
+			wasEaten:   false,
 			score:      0,
 			food:       [2]int{},
 			snakeLen:   4,
@@ -60,8 +61,7 @@ func (g *Game) runGame() {
 	g.field.initFood()
 	g.field.score = 0
 
-	g.field.renderField()
-	g.field.renderScoreAndMode()
+	g.field.renderGame()
 
 	time.Sleep(time.Second * 1)
 
