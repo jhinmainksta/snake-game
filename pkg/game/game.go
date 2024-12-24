@@ -2,7 +2,6 @@ package game
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/eiannone/keyboard"
@@ -149,7 +148,7 @@ func (g *Game) StartMenu() {
 		case <-g.escChan:
 			termbox.Clear(defaultColour, defaultColour)
 			termbox.Flush()
-			os.Exit(0)
+			return
 		case <-g.borderChan:
 			g.field.borderMode = !g.field.borderMode
 		}
