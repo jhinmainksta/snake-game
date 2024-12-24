@@ -55,6 +55,13 @@ func InitGame() *Game {
 	}
 }
 
+func StartGame() {
+	Game := InitGame()
+
+	go Game.HandleInput()
+	Game.StartMenu()
+}
+
 func (g *Game) runGame() {
 
 	g.field.initSnake()
