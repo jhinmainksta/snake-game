@@ -25,10 +25,18 @@ type Game struct {
 
 	gameSpeed        int
 	directionsQuerry [2]string
-	field            *Field
+
+	row        int
+	col        int
+	borderMode bool
+	wasEaten   bool
+	score      int
+	food       [2]int
+	snakeLen   int
+	snake      *Snake
 }
 
-func InitGame() *Game {
+func NewGame() *Game {
 	return &Game{
 		escChan:    make(chan struct{}),
 		isPaused:   false,
@@ -40,21 +48,20 @@ func InitGame() *Game {
 
 		gameSpeed:        defaultGameSpeed,
 		directionsQuerry: [2]string{},
-		field: &Field{
-			row:        defaultRow,
-			col:        defaultCol,
-			borderMode: false,
-			wasEaten:   false,
-			score:      0,
-			food:       [2]int{},
-			snakeLen:   4,
-			snake:      &Snake{},
-		},
+
+		row:        defaultRow,
+		col:        defaultCol,
+		borderMode: false,
+		wasEaten:   false,
+		score:      0,
+		food:       [2]int{},
+		snakeLen:   4,
+		snake:      &Snake{},
 	}
 }
 
-func StartGame() {
-	Game := InitGame()
+func InitGame() {
+	Game := NewGame()
 
 	go Game.HandleInput()
 	Game.StartMenu()
@@ -62,11 +69,12 @@ func StartGame() {
 
 func (g *Game) runGame() {
 
-	g.field.initSnake()
-	g.field.initFood()
-	g.field.score = 0
+	g.directionsQuerry = [2]string{}
+	g.initSnake()
+	g.initFood()
+	g.score = 0
 
-	g.field.renderGame()
+	g.renderGame()
 
 	time.Sleep(time.Second * 1)
 
@@ -80,20 +88,20 @@ func (g *Game) runGame() {
 		case <-g.pauseChan:
 			g.isPaused = !g.isPaused
 			if g.isPaused {
-				g.field.renderInfo()
+				g.renderInfo()
 			}
 		default:
 			if !g.isPaused {
 				g.setDirection()
 
-				if g.field.snake.len == g.field.col*g.field.row {
+				if g.snake.len == g.col*g.row {
 
 					g.renderWinMsg()
 					g.toMenu = true
 					g.isPaused = false
 					return
 				}
-				if failed := g.field.ProcessTheMove(); failed {
+				if failed := g.ProcessTheMove(); failed {
 
 					g.renderLossMsg()
 					g.toMenu = true
@@ -115,7 +123,7 @@ func (g *Game) afterGame() {
 
 	defer func() { g.toMenu = false }()
 
-	g.field.renderAfterGame()
+	g.renderAfterGame()
 
 	for {
 		select {
@@ -149,7 +157,7 @@ func (g *Game) StartMenu() {
 			termbox.Flush()
 			return
 		case <-g.borderChan:
-			g.field.borderMode = !g.field.borderMode
+			g.borderMode = !g.borderMode
 		}
 	}
 }
@@ -194,25 +202,25 @@ func (g *Game) HandleInput() {
 			case char == 'w' || key == keyboard.KeyArrowUp:
 				if g.directionsQuerry[0] != "" {
 					g.directionsQuerry[1] = "w"
-				} else if g.field.snake.direction != "w" {
+				} else if g.snake.direction != "w" {
 					g.directionsQuerry[0] = "w"
 				}
 			case char == 'a' || key == keyboard.KeyArrowLeft:
 				if g.directionsQuerry[0] != "" {
 					g.directionsQuerry[1] = "a"
-				} else if g.field.snake.direction != "a" {
+				} else if g.snake.direction != "a" {
 					g.directionsQuerry[0] = "a"
 				}
 			case char == 's' || key == keyboard.KeyArrowDown:
 				if g.directionsQuerry[0] != "" {
 					g.directionsQuerry[1] = "s"
-				} else if g.field.snake.direction != "s" {
+				} else if g.snake.direction != "s" {
 					g.directionsQuerry[0] = "s"
 				}
 			case char == 'd' || key == keyboard.KeyArrowRight:
 				if g.directionsQuerry[0] != "" {
 					g.directionsQuerry[1] = "d"
-				} else if g.field.snake.direction != "d" {
+				} else if g.snake.direction != "d" {
 					g.directionsQuerry[0] = "d"
 				}
 			}
@@ -222,11 +230,11 @@ func (g *Game) HandleInput() {
 
 func (g *Game) setDirection() {
 	if g.directionsQuerry[0] != "" {
-		if !(g.directionsQuerry[0] == "w" && g.field.snake.direction == "s" ||
-			g.directionsQuerry[0] == "s" && g.field.snake.direction == "w" ||
-			g.directionsQuerry[0] == "a" && g.field.snake.direction == "d" ||
-			g.directionsQuerry[0] == "d" && g.field.snake.direction == "a") {
-			g.field.snake.direction = g.directionsQuerry[0]
+		if !(g.directionsQuerry[0] == "w" && g.snake.direction == "s" ||
+			g.directionsQuerry[0] == "s" && g.snake.direction == "w" ||
+			g.directionsQuerry[0] == "a" && g.snake.direction == "d" ||
+			g.directionsQuerry[0] == "d" && g.snake.direction == "a") {
+			g.snake.direction = g.directionsQuerry[0]
 		} else {
 			g.directionsQuerry[1] = ""
 		}
