@@ -12,7 +12,6 @@ const (
 	defaultGameSpeed = 150
 	defaultRow       = 10
 	defaultCol       = 12
-	defaultColour    = termbox.ColorDefault
 )
 
 type Game struct {
@@ -87,16 +86,16 @@ func (g *Game) runGame() {
 			if !g.isPaused {
 				g.setDirection()
 
-				if failed := g.field.ProcessTheMove(); failed {
+				if g.field.snake.len == g.field.col*g.field.row {
 
-					g.renderLossMsg()
+					g.renderWinMsg()
 					g.toMenu = true
 					g.isPaused = false
 					return
 				}
-				if g.field.snakeLen == g.field.col*g.field.row {
+				if failed := g.field.ProcessTheMove(); failed {
 
-					g.renderWinMsg()
+					g.renderLossMsg()
 					g.toMenu = true
 					g.isPaused = false
 					return
