@@ -12,19 +12,39 @@ const (
 	defaultColour = termbox.ColorDefault
 )
 
-func (game *Game) renderInfo() {
-	utils.Tbprint(game.col+1-3, game.row+3, defaultColour, defaultColour, "paused")
+func (game *Game) renderMenu() {
+	termbox.Clear(defaultColour, defaultColour)
+
+	mid := 20
+	firstRow := 1
+	title := "THE SNAKE"
+	utils.Tbprint(mid-(len(title)+1)/2, firstRow, defaultColour, defaultColour, title)
+
+	border := "border mode: "
+	if game.borderMode {
+		border += "on"
+	} else {
+		border += "off"
+	}
+	utils.Tbprint(mid-(len(border)+1)/2, firstRow+2, defaultColour, defaultColour, border)
+
+	play := "press Enter to play snake"
+	utils.Tbprint(mid-(len(play)+1)/2, firstRow+4, defaultColour, defaultColour, play)
+	swmode := "press Space to switch border mode"
+	utils.Tbprint(mid-(len(swmode)+1)/2, firstRow+5, defaultColour, defaultColour, swmode)
+	settings := "settings"
+	utils.Tbprint(mid-(len(settings)+1)/2, firstRow+6, defaultColour, defaultColour, settings)
+	exit := "press Esc to exit"
+	utils.Tbprint(mid-(len(exit)+1)/2, firstRow+7, defaultColour, defaultColour, exit)
+
 	termbox.Flush()
 }
 
-func (game *Game) renderScoreAndMode() {
-	scoreStr := strconv.Itoa(game.score)
-	msg := "borders off"
-	if game.borderMode {
-		msg = "borders on"
-	}
-	backspace := (game.col+1)*2 - len(scoreStr) - len(msg)
-	utils.Tbprint(0, 0, defaultColour, defaultColour, msg+strings.Repeat(" ", backspace)+scoreStr)
+func (game *Game) renderGame() {
+	termbox.Clear(defaultColour, defaultColour)
+	game.renderField()
+	game.renderScoreAndMode()
+	termbox.Flush()
 }
 
 func (game *Game) renderField() {
@@ -51,6 +71,16 @@ func (game *Game) renderField() {
 	}
 }
 
+func (game *Game) renderScoreAndMode() {
+	scoreStr := strconv.Itoa(game.score)
+	msg := "borders off"
+	if game.borderMode {
+		msg = "borders on"
+	}
+	backspace := (game.col+1)*2 - len(scoreStr) - len(msg) - 1
+	utils.Tbprint(1, 0, defaultColour, defaultColour, msg+strings.Repeat(" ", backspace)+scoreStr)
+}
+
 func (game *Game) renderAfterGame() {
 
 	utils.Tbprint(2, game.row+4, defaultColour, defaultColour, "┌─────────────────────┐")
@@ -60,25 +90,8 @@ func (game *Game) renderAfterGame() {
 	termbox.Flush()
 }
 
-func (game *Game) renderGame() {
-	termbox.Clear(defaultColour, defaultColour)
-	game.renderField()
-	game.renderScoreAndMode()
-	termbox.Flush()
-}
-
-func (game *Game) renderMenu() {
-	termbox.Clear(defaultColour, defaultColour)
-	utils.Tbprint(0, 0, defaultColour, defaultColour, "        ~~~snake~game~~☭ *        ")
-
-	if game.borderMode {
-		utils.Tbprint(0, 1, defaultColour, defaultColour, "         border mode: on           ")
-	} else {
-		utils.Tbprint(0, 1, defaultColour, defaultColour, "         border mode: off          ")
-	}
-	utils.Tbprint(0, 3, defaultColour, defaultColour, " press Enter to play snake         ")
-	utils.Tbprint(0, 4, defaultColour, defaultColour, " press Esc to exit                 ")
-	utils.Tbprint(0, 5, defaultColour, defaultColour, " press Space to switch border mode ")
+func (game *Game) renderPaused() {
+	utils.Tbprint(game.col+1-3, game.row+3, defaultColour, defaultColour, "paused")
 	termbox.Flush()
 }
 

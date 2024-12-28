@@ -10,8 +10,8 @@ import (
 
 const (
 	defaultGameSpeed = 150
-	defaultRow       = 10
-	defaultCol       = 12
+	defaultRow       = 6
+	defaultCol       = 6
 )
 
 type Game struct {
@@ -67,6 +67,32 @@ func InitGame() {
 	Game.StartMenu()
 }
 
+func (g *Game) StartMenu() {
+
+	err := termbox.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer termbox.Close()
+
+	for {
+		g.renderMenu()
+		select {
+		case <-g.startChan:
+			for g.isStarted {
+				g.runGame()
+				g.afterGame()
+			}
+		case <-g.escChan:
+			termbox.Clear(defaultColour, defaultColour)
+			termbox.Flush()
+			return
+		case <-g.borderChan:
+			g.borderMode = !g.borderMode
+		}
+	}
+}
+
 func (g *Game) runGame() {
 
 	g.directionsQuerry = [2]string{}
@@ -88,7 +114,7 @@ func (g *Game) runGame() {
 		case <-g.pauseChan:
 			g.isPaused = !g.isPaused
 			if g.isPaused {
-				g.renderInfo()
+				g.renderPaused()
 			}
 		default:
 			if !g.isPaused {
@@ -132,32 +158,6 @@ func (g *Game) afterGame() {
 		case <-g.escChan:
 			g.isStarted = false
 			return
-		}
-	}
-}
-
-func (g *Game) StartMenu() {
-
-	err := termbox.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer termbox.Close()
-
-	for {
-		g.renderMenu()
-		select {
-		case <-g.startChan:
-			for g.isStarted {
-				g.runGame()
-				g.afterGame()
-			}
-		case <-g.escChan:
-			termbox.Clear(defaultColour, defaultColour)
-			termbox.Flush()
-			return
-		case <-g.borderChan:
-			g.borderMode = !g.borderMode
 		}
 	}
 }

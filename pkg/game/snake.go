@@ -118,8 +118,6 @@ func (game *Game) moveSnake() {
 		if game.snake.len != game.col*game.row {
 			game.score += 1
 			game.initFood()
-		} else {
-
 		}
 	}
 }
