@@ -13,34 +13,33 @@ const (
 )
 
 func (game *Game) renderMenu() {
+
 	termbox.Clear(defaultColour, defaultColour)
 
 	mid := 20
-	firstRow := 1
-	title := "THE SNAKE"
-	utils.Tbprint(mid-(len(title)+1)/2, firstRow, defaultColour, defaultColour, title)
 
-	border := "border mode: "
-	if game.borderMode {
-		border += "on"
-	} else {
-		border += "off"
+	utils.Tbprint(mid-(len(gameName)+1)/2, menuFirstRow, defaultColour, defaultColour, gameName)
+
+	for i, option := range menu {
+		if option == "border mode" {
+			if game.borderMode {
+				option += " on"
+			} else {
+				option += " off"
+			}
+		}
+		if i == game.menuIndex {
+			option = "> " + option + " <"
+		}
+
+		utils.Tbprint(mid-(len(option)+1)/2, menuFirstRow+menuBackspace+i, defaultColour, defaultColour, option)
 	}
-	utils.Tbprint(mid-(len(border)+1)/2, firstRow+2, defaultColour, defaultColour, border)
-
-	play := "press Enter to play snake"
-	utils.Tbprint(mid-(len(play)+1)/2, firstRow+4, defaultColour, defaultColour, play)
-	swmode := "press Space to switch border mode"
-	utils.Tbprint(mid-(len(swmode)+1)/2, firstRow+5, defaultColour, defaultColour, swmode)
-	settings := "settings"
-	utils.Tbprint(mid-(len(settings)+1)/2, firstRow+6, defaultColour, defaultColour, settings)
-	exit := "press Esc to exit"
-	utils.Tbprint(mid-(len(exit)+1)/2, firstRow+7, defaultColour, defaultColour, exit)
 
 	termbox.Flush()
 }
 
 func (game *Game) renderGame() {
+
 	termbox.Clear(defaultColour, defaultColour)
 	game.renderField()
 	game.renderScoreAndMode()
@@ -82,7 +81,6 @@ func (game *Game) renderScoreAndMode() {
 }
 
 func (game *Game) renderAfterGame() {
-
 	utils.Tbprint(2, game.row+4, defaultColour, defaultColour, "┌─────────────────────┐")
 	utils.Tbprint(2, game.row+5, defaultColour, defaultColour, "│  Enter - next game  │")
 	utils.Tbprint(2, game.row+6, defaultColour, defaultColour, "│    Esc - menu       │")
@@ -101,6 +99,6 @@ func (game *Game) renderLossMsg() {
 }
 
 func (game *Game) renderWinMsg() {
-	utils.Tbprint(0, game.row+3, defaultColour, defaultColour, "Luchshiy, igrok v computer, graz!")
+	utils.Tbprint(0, game.row+3, defaultColour, defaultColour, "Luchshiy, potryasayushaya igra v computer, graz!")
 	termbox.Flush()
 }

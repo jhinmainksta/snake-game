@@ -9,22 +9,35 @@ import (
 )
 
 const (
+	gameName = "THE SNAKE"
+
+	play       = "play snake"
+	borderMode = "border mode"
+	settings   = "settings"
+	exit       = "exit"
+
 	defaultGameSpeed = 150
-	defaultRow       = 6
-	defaultCol       = 6
+	defaultRow       = 10
+	defaultCol       = 12
+	menuBackspace    = 2
+	menuFirstRow     = 1
 )
 
+var menu = [...]string{play, borderMode, settings, exit}
+
 type Game struct {
-	escChan    chan struct{}
-	isPaused   bool
-	pauseChan  chan struct{}
-	isStarted  bool
-	startChan  chan struct{}
-	toMenu     bool
-	borderChan chan struct{}
+	escChan   chan struct{}
+	enterChan chan struct{}
+	isPaused  bool
+	pauseChan chan struct{}
+	isStarted bool
+	startChan chan struct{}
+	toMenu    bool
+	menuChan  chan struct{}
 
 	gameSpeed        int
 	directionsQuerry [2]string
+	menuIndex        int
 
 	row        int
 	col        int
@@ -38,16 +51,18 @@ type Game struct {
 
 func NewGame() *Game {
 	return &Game{
-		escChan:    make(chan struct{}),
-		isPaused:   false,
-		pauseChan:  make(chan struct{}),
-		isStarted:  false,
-		startChan:  make(chan struct{}),
-		toMenu:     false,
-		borderChan: make(chan struct{}),
+		escChan:   make(chan struct{}),
+		enterChan: make(chan struct{}),
+		isPaused:  false,
+		pauseChan: make(chan struct{}),
+		isStarted: false,
+		startChan: make(chan struct{}),
+		toMenu:    false,
+		menuChan:  make(chan struct{}),
 
 		gameSpeed:        defaultGameSpeed,
 		directionsQuerry: [2]string{},
+		menuIndex:        0,
 
 		row:        defaultRow,
 		col:        defaultCol,
@@ -67,7 +82,7 @@ func InitGame() {
 	Game.StartMenu()
 }
 
-func (g *Game) StartMenu() {
+func (game *Game) StartMenu() {
 
 	err := termbox.Init()
 	if err != nil {
@@ -76,65 +91,73 @@ func (g *Game) StartMenu() {
 	defer termbox.Close()
 
 	for {
-		g.renderMenu()
+		game.renderMenu()
 		select {
-		case <-g.startChan:
-			for g.isStarted {
-				g.runGame()
-				g.afterGame()
+		case <-game.enterChan:
+			switch game.menuIndex {
+			case 0:
+				game.isStarted = true
+				for game.isStarted {
+					game.runGame()
+					game.afterGame()
+				}
+			case 1:
+				game.borderMode = !game.borderMode
+			case 2:
+			case 3:
+				termbox.Clear(defaultColour, defaultColour)
+				termbox.Flush()
+				return
 			}
-		case <-g.escChan:
+		case <-game.escChan:
 			termbox.Clear(defaultColour, defaultColour)
 			termbox.Flush()
 			return
-		case <-g.borderChan:
-			g.borderMode = !g.borderMode
+		case <-game.menuChan:
 		}
 	}
 }
 
-func (g *Game) runGame() {
+func (game *Game) runGame() {
 
-	g.directionsQuerry = [2]string{}
-	g.initSnake()
-	g.initFood()
-	g.score = 0
+	game.directionsQuerry = [2]string{}
+	game.initSnake()
+	game.initFood()
+	game.score = 0
 
-	g.renderGame()
+	game.renderGame()
 
 	time.Sleep(time.Second * 1)
 
 	for {
 		select {
-		case <-g.escChan:
-			g.isPaused = false
-			g.toMenu = false
-			g.isStarted = false
+		case <-game.escChan:
+			game.isPaused = false
+			game.toMenu = false
+			game.isStarted = false
 			return
-		case <-g.pauseChan:
-			g.isPaused = !g.isPaused
-			if g.isPaused {
-				g.renderPaused()
+		case <-game.pauseChan:
+			game.isPaused = !game.isPaused
+			if game.isPaused {
+				game.renderPaused()
 			}
 		default:
-			if !g.isPaused {
-				g.setDirection()
-
-				if g.snake.len == g.col*g.row {
-
-					g.renderWinMsg()
-					g.toMenu = true
-					g.isPaused = false
+			if !game.isPaused {
+				game.setDirection()
+				if game.snake.len == game.col*game.row {
+					game.renderWinMsg()
+					game.toMenu = true
+					game.isPaused = false
 					return
 				}
-				if failed := g.ProcessTheMove(); failed {
+				if failed := game.ProcessTheMove(); failed {
 
-					g.renderLossMsg()
-					g.toMenu = true
-					g.isPaused = false
+					game.renderLossMsg()
+					game.toMenu = true
+					game.isPaused = false
 					return
 				}
-				time.Sleep(time.Millisecond * time.Duration(g.gameSpeed))
+				time.Sleep(time.Millisecond * time.Duration(game.gameSpeed))
 			} else {
 				time.Sleep(100 * time.Millisecond)
 			}
@@ -142,27 +165,27 @@ func (g *Game) runGame() {
 	}
 }
 
-func (g *Game) afterGame() {
-	if !g.toMenu {
+func (game *Game) afterGame() {
+	if !game.toMenu {
 		return
 	}
 
-	defer func() { g.toMenu = false }()
+	defer func() { game.toMenu = false }()
 
-	g.renderAfterGame()
+	game.renderAfterGame()
 
 	for {
 		select {
-		case <-g.startChan:
+		case <-game.startChan:
 			return
-		case <-g.escChan:
-			g.isStarted = false
+		case <-game.escChan:
+			game.isStarted = false
 			return
 		}
 	}
 }
 
-func (g *Game) HandleInput() {
+func (game *Game) HandleInput() {
 
 	if err := keyboard.Open(); err != nil {
 		log.Fatal(err)
@@ -170,75 +193,88 @@ func (g *Game) HandleInput() {
 	defer keyboard.Close()
 
 	for {
-
 		char, key, err := keyboard.GetKey()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if !g.isStarted {
+		if !game.isStarted {
 			switch key {
 			case keyboard.KeyEnter:
-				g.isStarted = true
-				g.startChan <- struct{}{}
+				game.enterChan <- struct{}{}
 			case keyboard.KeyEsc:
-				g.escChan <- struct{}{}
-			case keyboard.KeySpace:
-				g.borderChan <- struct{}{}
+				game.escChan <- struct{}{}
+			case keyboard.KeyArrowDown:
+				fallthrough
+			case keyboard.KeyArrowRight:
+				game.menuIndex++
+				if game.menuIndex == len(menu) {
+					game.menuIndex = 0
+				}
+				game.menuChan <- struct{}{}
+			case keyboard.KeyArrowUp:
+				fallthrough
+			case keyboard.KeyArrowLeft:
+				game.menuIndex--
+				if game.menuIndex == -1 {
+					game.menuIndex = len(menu) - 1
+				}
+				game.menuChan <- struct{}{}
 			}
+
 		} else {
 			switch {
 			case key == keyboard.KeyEnter:
-				if g.toMenu {
-					g.startChan <- struct{}{}
+				if game.toMenu {
+					game.startChan <- struct{}{}
 				}
 			case key == keyboard.KeySpace:
-				if !g.toMenu {
-					g.pauseChan <- struct{}{}
+				if !game.toMenu {
+					game.pauseChan <- struct{}{}
 				}
 			case key == keyboard.KeyEsc:
-				g.isStarted = false
-				g.escChan <- struct{}{}
+				game.isStarted = false
+				game.escChan <- struct{}{}
 			case char == 'w' || key == keyboard.KeyArrowUp:
-				if g.directionsQuerry[0] != "" {
-					g.directionsQuerry[1] = "w"
-				} else if g.snake.direction != "w" {
-					g.directionsQuerry[0] = "w"
+				if game.directionsQuerry[0] != "" {
+					game.directionsQuerry[1] = "w"
+				} else if game.snake.direction != "w" {
+					game.directionsQuerry[0] = "w"
 				}
 			case char == 'a' || key == keyboard.KeyArrowLeft:
-				if g.directionsQuerry[0] != "" {
-					g.directionsQuerry[1] = "a"
-				} else if g.snake.direction != "a" {
-					g.directionsQuerry[0] = "a"
+				if game.directionsQuerry[0] != "" {
+					game.directionsQuerry[1] = "a"
+				} else if game.snake.direction != "a" {
+					game.directionsQuerry[0] = "a"
 				}
 			case char == 's' || key == keyboard.KeyArrowDown:
-				if g.directionsQuerry[0] != "" {
-					g.directionsQuerry[1] = "s"
-				} else if g.snake.direction != "s" {
-					g.directionsQuerry[0] = "s"
+				if game.directionsQuerry[0] != "" {
+					game.directionsQuerry[1] = "s"
+				} else if game.snake.direction != "s" {
+					game.directionsQuerry[0] = "s"
 				}
 			case char == 'd' || key == keyboard.KeyArrowRight:
-				if g.directionsQuerry[0] != "" {
-					g.directionsQuerry[1] = "d"
-				} else if g.snake.direction != "d" {
-					g.directionsQuerry[0] = "d"
+				if game.directionsQuerry[0] != "" {
+					game.directionsQuerry[1] = "d"
+				} else if game.snake.direction != "d" {
+					game.directionsQuerry[0] = "d"
 				}
 			}
 		}
 	}
 }
 
-func (g *Game) setDirection() {
-	if g.directionsQuerry[0] != "" {
-		if !(g.directionsQuerry[0] == "w" && g.snake.direction == "s" ||
-			g.directionsQuerry[0] == "s" && g.snake.direction == "w" ||
-			g.directionsQuerry[0] == "a" && g.snake.direction == "d" ||
-			g.directionsQuerry[0] == "d" && g.snake.direction == "a") {
-			g.snake.direction = g.directionsQuerry[0]
+func (game *Game) setDirection() {
+	if game.directionsQuerry[0] != "" {
+		if !(game.directionsQuerry[0] == "w" && game.snake.direction == "s" ||
+			game.directionsQuerry[0] == "s" && game.snake.direction == "w" ||
+			game.directionsQuerry[0] == "a" && game.snake.direction == "d" ||
+			game.directionsQuerry[0] == "d" && game.snake.direction == "a") {
+			game.snake.direction = game.directionsQuerry[0]
 		} else {
-			g.directionsQuerry[1] = ""
+			game.directionsQuerry[1] = ""
 		}
-		g.directionsQuerry[0] = g.directionsQuerry[1]
-		g.directionsQuerry[1] = ""
+		game.directionsQuerry[0] = game.directionsQuerry[1]
+		game.directionsQuerry[1] = ""
 	}
 }
