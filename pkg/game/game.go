@@ -205,13 +205,13 @@ func (game *Game) HandleInput() {
 				game.enterChan <- struct{}{}
 			case key == keyboard.KeyEsc:
 				game.escChan <- struct{}{}
-			case key == keyboard.KeyArrowDown || key == keyboard.KeyArrowRight:
+			case key == keyboard.KeyArrowDown || key == keyboard.KeyArrowRight || char == 's' || char == 'd':
 				game.menuIndex++
 				if game.menuIndex == len(menu) {
 					game.menuIndex = 0
 				}
 				game.menuChan <- struct{}{}
-			case key == keyboard.KeyArrowUp || key == keyboard.KeyArrowLeft:
+			case key == keyboard.KeyArrowUp || key == keyboard.KeyArrowLeft || char == 'w' || char == 'a':
 				game.menuIndex--
 				if game.menuIndex == -1 {
 					game.menuIndex = len(menu) - 1
