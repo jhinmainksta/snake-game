@@ -19,8 +19,9 @@ const (
 	defaultGameSpeed = 150
 	defaultRow       = 10
 	defaultCol       = 12
-	menuBackspace    = 2
+	menuBackspace    = 3
 	menuFirstRow     = 1
+	menuMiddle       = 20
 )
 
 var menu = [...]string{play, borderMode, settings, exit}
@@ -199,22 +200,18 @@ func (game *Game) HandleInput() {
 		}
 
 		if !game.isStarted {
-			switch key {
-			case keyboard.KeyEnter:
+			switch {
+			case key == keyboard.KeyEnter:
 				game.enterChan <- struct{}{}
-			case keyboard.KeyEsc:
+			case key == keyboard.KeyEsc:
 				game.escChan <- struct{}{}
-			case keyboard.KeyArrowDown:
-				fallthrough
-			case keyboard.KeyArrowRight:
+			case key == keyboard.KeyArrowDown || key == keyboard.KeyArrowRight:
 				game.menuIndex++
 				if game.menuIndex == len(menu) {
 					game.menuIndex = 0
 				}
 				game.menuChan <- struct{}{}
-			case keyboard.KeyArrowUp:
-				fallthrough
-			case keyboard.KeyArrowLeft:
+			case key == keyboard.KeyArrowUp || key == keyboard.KeyArrowLeft:
 				game.menuIndex--
 				if game.menuIndex == -1 {
 					game.menuIndex = len(menu) - 1

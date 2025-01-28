@@ -1,6 +1,7 @@
 package game
 
 import (
+	"runtime"
 	"snake/pkg/utils"
 	"strconv"
 	"strings"
@@ -16,9 +17,10 @@ func (game *Game) renderMenu() {
 
 	termbox.Clear(defaultColour, defaultColour)
 
-	mid := 20
+	utils.Tbprint(menuMiddle-(len(gameName)+1)/2, menuFirstRow, defaultColour, defaultColour, gameName)
 
-	utils.Tbprint(mid-(len(gameName)+1)/2, menuFirstRow, defaultColour, defaultColour, gameName)
+	os := "running on " + runtime.GOOS
+	utils.Tbprint(menuMiddle-(len(os)+1)/2, menuFirstRow+1, defaultColour, defaultColour, os)
 
 	for i, option := range menu {
 		if option == "border mode" {
@@ -32,7 +34,7 @@ func (game *Game) renderMenu() {
 			option = "> " + option + " <"
 		}
 
-		utils.Tbprint(mid-(len(option)+1)/2, menuFirstRow+menuBackspace+i, defaultColour, defaultColour, option)
+		utils.Tbprint(menuMiddle-(len(option)+1)/2, menuFirstRow+menuBackspace+i, defaultColour, defaultColour, option)
 	}
 
 	termbox.Flush()
